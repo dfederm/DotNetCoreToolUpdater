@@ -1,0 +1,69 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.30128.36
+MinimumVisualStudioVersion = 15.0.26124.0
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DotNetCoreToolUpdater", "src\DotNetCoreToolUpdater.csproj", "{3C7A42B1-E4DD-43D6-8336-51CAB35A4461}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{ED951E50-7067-4410-8831-F06487DB91F1}"
+	ProjectSection(SolutionItems) = preProject
+		.editorconfig = .editorconfig
+		Directory.Build.props = Directory.Build.props
+		LICENSE = LICENSE
+		NuGet.config = NuGet.config
+		README.md = README.md
+		stylecop.json = stylecop.json
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "samples", "samples", "{550F3EFF-3CF4-4297-9A43-8567E609C150}"
+	ProjectSection(SolutionItems) = preProject
+		samples\.editorconfig = samples\.editorconfig
+	EndProjectSection
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BasicSampleTool", "samples\basic\BasicSampleTool.csproj", "{1174BB15-4A65-46AA-9A4A-CF087ED69009}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Debug|x64 = Debug|x64
+		Debug|x86 = Debug|x86
+		Release|Any CPU = Release|Any CPU
+		Release|x64 = Release|x64
+		Release|x86 = Release|x86
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{3C7A42B1-E4DD-43D6-8336-51CAB35A4461}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3C7A42B1-E4DD-43D6-8336-51CAB35A4461}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3C7A42B1-E4DD-43D6-8336-51CAB35A4461}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{3C7A42B1-E4DD-43D6-8336-51CAB35A4461}.Debug|x64.Build.0 = Debug|Any CPU
+		{3C7A42B1-E4DD-43D6-8336-51CAB35A4461}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{3C7A42B1-E4DD-43D6-8336-51CAB35A4461}.Debug|x86.Build.0 = Debug|Any CPU
+		{3C7A42B1-E4DD-43D6-8336-51CAB35A4461}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3C7A42B1-E4DD-43D6-8336-51CAB35A4461}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3C7A42B1-E4DD-43D6-8336-51CAB35A4461}.Release|x64.ActiveCfg = Release|Any CPU
+		{3C7A42B1-E4DD-43D6-8336-51CAB35A4461}.Release|x64.Build.0 = Release|Any CPU
+		{3C7A42B1-E4DD-43D6-8336-51CAB35A4461}.Release|x86.ActiveCfg = Release|Any CPU
+		{3C7A42B1-E4DD-43D6-8336-51CAB35A4461}.Release|x86.Build.0 = Release|Any CPU
+		{1174BB15-4A65-46AA-9A4A-CF087ED69009}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1174BB15-4A65-46AA-9A4A-CF087ED69009}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1174BB15-4A65-46AA-9A4A-CF087ED69009}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{1174BB15-4A65-46AA-9A4A-CF087ED69009}.Debug|x64.Build.0 = Debug|Any CPU
+		{1174BB15-4A65-46AA-9A4A-CF087ED69009}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{1174BB15-4A65-46AA-9A4A-CF087ED69009}.Debug|x86.Build.0 = Debug|Any CPU
+		{1174BB15-4A65-46AA-9A4A-CF087ED69009}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1174BB15-4A65-46AA-9A4A-CF087ED69009}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1174BB15-4A65-46AA-9A4A-CF087ED69009}.Release|x64.ActiveCfg = Release|Any CPU
+		{1174BB15-4A65-46AA-9A4A-CF087ED69009}.Release|x64.Build.0 = Release|Any CPU
+		{1174BB15-4A65-46AA-9A4A-CF087ED69009}.Release|x86.ActiveCfg = Release|Any CPU
+		{1174BB15-4A65-46AA-9A4A-CF087ED69009}.Release|x86.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{1174BB15-4A65-46AA-9A4A-CF087ED69009} = {550F3EFF-3CF4-4297-9A43-8567E609C150}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {84965126-5629-477B-BAB9-75D8122EB8BA}
+	EndGlobalSection
+EndGlobal

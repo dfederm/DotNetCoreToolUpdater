@@ -1,0 +1,6 @@
+# Additional config for sample projects specifically
+
+[*.cs]
+
+# Do not directly await a Task. We do not need ConfigurateAwait in console apps.
+dotnet_diagnostic.CA2007.severity = none
