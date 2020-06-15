@@ -8,17 +8,13 @@ namespace DotNetCoreToolUpdater
     public sealed class UpdateResult
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="UpdateResult"/> class.
+        /// Gets or sets a value indicating whether the update was successful.
         /// </summary>
-        /// <param name="isSuccessful">Whether the update was successful.</param>
-        public UpdateResult(bool isSuccessful)
-        {
-            IsSuccessful = isSuccessful;
-        }
+        public bool IsSuccessful { get; set; }
 
         /// <summary>
-        /// Gets a value indicating whether the update was successful.
+        /// Gets or sets the current version of the tool.
         /// </summary>
-        public bool IsSuccessful { get; }
+        public string CurrentVersion { get; set; }
     }
 }

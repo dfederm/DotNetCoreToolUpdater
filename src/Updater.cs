@@ -2,62 +2,127 @@
 
 namespace DotNetCoreToolUpdater
 {
+    using System;
     using System.Diagnostics;
+    using System.IO;
+    using System.Reflection;
+    using System.Runtime.InteropServices;
+    using System.Text;
+    using System.Text.RegularExpressions;
     using System.Threading;
     using System.Threading.Tasks;
+    using NugetSettings = NuGet.Configuration.Settings;
+    using NugetSettingsUtility = NuGet.Configuration.SettingsUtility;
 
     /// <summary>
     /// Manages updates to the tool.
     /// </summary>
     public sealed class Updater : IUpdater
     {
-        private readonly string _toolPackageName;
-
-        private readonly string _toolPackageSource;
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="Updater"/> class.
-        /// </summary>
-        /// <param name="toolPackageName">The name of the tool package to update.</param>
-        /// <param name="toolPackageSource">The NuGet source where the tool package is located.</param>
-        public Updater(
-            string toolPackageName,
-            string toolPackageSource)
+        /// <inheritdoc />
+        public Task<UpdateResult> UpdateCurrentToolAsync(
+            string nugetSource = null,
+            CancellationToken cancellationToken = default)
         {
-            _toolPackageName = toolPackageName;
-            _toolPackageSource = toolPackageSource;
+            cancellationToken.ThrowIfCancellationRequested();
+
+            (bool isLocalTool, string toolPath, string packageName, string packageVersion) = DetectToolContext();
+
+            return UpdateInternalAsync(isLocalTool, toolPath, packageName, packageVersion, nugetSource, cancellationToken);
         }
 
         /// <inheritdoc />
-        public Task<UpdateResult> UpdateAsync(CancellationToken cancellationToken)
+        public Task<UpdateResult> UpdateGlobalToolAsync(
+            string packageName,
+            string toolPath = null,
+            string nugetSource = null,
+            CancellationToken cancellationToken = default)
         {
-            if (cancellationToken.IsCancellationRequested)
+            if (string.IsNullOrEmpty(packageName))
             {
-                return Task.FromResult(new UpdateResult(isSuccessful: false));
+                throw new ArgumentNullException(nameof(packageName));
             }
+
+            cancellationToken.ThrowIfCancellationRequested();
+
+            return UpdateInternalAsync(isLocalTool: false, toolPath, packageName, packageVersion: null, nugetSource, cancellationToken);
+        }
+
+        /// <inheritdoc />
+        public Task<UpdateResult> UpdateLocalToolAsync(
+            string packageName,
+            string nugetSource = null,
+            CancellationToken cancellationToken = default)
+        {
+            if (string.IsNullOrEmpty(packageName))
+            {
+                throw new ArgumentNullException(nameof(packageName));
+            }
+
+            cancellationToken.ThrowIfCancellationRequested();
+
+            return UpdateInternalAsync(isLocalTool: true, toolPath: null, packageName, packageVersion: null, nugetSource, cancellationToken);
+        }
+
+        private static Task<UpdateResult> UpdateInternalAsync(
+            bool isLocalTool,
+            string toolPath,
+            string packageName,
+            string packageVersion,
+            string nugetSource,
+            CancellationToken cancellationToken)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
 
             // Create a new task as soon as possible to avoid blocking the caller.
-            return Task.Run(() => PerformUpdate(cancellationToken));
+            return Task.Run(() =>
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+
+                bool successful = TryInvokeDotNetToolUpdate(isLocalTool, toolPath, packageName, nugetSource, cancellationToken);
+                return new UpdateResult
+                {
+                    IsSuccessful = successful,
+                    CurrentVersion = packageVersion,
+                };
+            });
         }
 
-        private UpdateResult PerformUpdate(CancellationToken cancellationToken)
+        private static bool TryInvokeDotNetToolUpdate(
+            bool isLocalTool,
+            string toolPath,
+            string packageName,
+            string nugetSource,
+            CancellationToken cancellationToken)
         {
-            if (cancellationToken.IsCancellationRequested)
+            var argumentBuilder = new StringBuilder();
+            argumentBuilder.Append("tool update ");
+            argumentBuilder.Append(packageName);
+
+            if (!isLocalTool)
             {
-                return new UpdateResult(isSuccessful: false);
+                if (string.IsNullOrEmpty(toolPath))
+                {
+                    argumentBuilder.Append(" --global");
+                }
+                else
+                {
+                    argumentBuilder.Append(" --tool-path ");
+                    argumentBuilder.Append(toolPath);
+                }
             }
 
-            bool successful = TryInvokeDotNetToolUpdate(cancellationToken);
-            return new UpdateResult(successful);
-        }
+            if (!string.IsNullOrEmpty(nugetSource))
+            {
+                argumentBuilder.Append(" --add-source ");
+                argumentBuilder.Append(nugetSource);
+            }
 
-        private bool TryInvokeDotNetToolUpdate(CancellationToken cancellationToken)
-        {
             using var process = new Process
             {
                 StartInfo = new ProcessStartInfo
                 {
-                    Arguments = $"tool update {_toolPackageName} --add-source {_toolPackageSource}",
+                    Arguments = argumentBuilder.ToString(),
                     CreateNoWindow = true,
                     FileName = "dotnet",
                     RedirectStandardError = true,
@@ -103,6 +168,56 @@ namespace DotNetCoreToolUpdater
             process.WaitForExit();
 
             return process.ExitCode == 0;
+        }
+
+        private static (bool isLocalTool, string toolPath, string packageName, string packageVersion) DetectToolContext()
+        {
+            var toolAssemblyPath = Assembly.GetEntryAssembly().Location;
+
+            // Windows is not case-sensitive, so use a case-insensitive regexes
+            var regexOptions = RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
+                ? RegexOptions.IgnoreCase
+                : RegexOptions.None;
+
+            var regexEscapedDirectorySeparator = Regex.Escape(Path.DirectorySeparatorChar.ToString());
+
+            // Local tools execute from the nuget global package folder, so check if the entry assembly (the tool)
+            // is located there to detect that it's running as a local tool.
+            var nugetSettings = NugetSettings.LoadDefaultSettings(Directory.GetCurrentDirectory());
+            var nugetGlobalPackageFolder = NugetSettingsUtility.GetGlobalPackagesFolder(nugetSettings);
+            if (nugetGlobalPackageFolder[nugetGlobalPackageFolder.Length - 1] != Path.DirectorySeparatorChar)
+            {
+                nugetGlobalPackageFolder += Path.DirectorySeparatorChar;
+            }
+
+            // Example: C:\Users\Foo\.nuget\packages\basicsampletool\1.0.0\tools\netcoreapp3.1\any\BasicSampleTool.dll
+            var localToolPathRegex = new Regex(
+                $@"^{Regex.Escape(nugetGlobalPackageFolder)}(?<PackageName>[^{regexEscapedDirectorySeparator}]+){regexEscapedDirectorySeparator}(?<PackageVersion>[^{regexEscapedDirectorySeparator}]+)",
+                regexOptions);
+            Match localToolPathMatch = localToolPathRegex.Match(toolAssemblyPath);
+            if (localToolPathMatch.Success)
+            {
+                string packageName = localToolPathMatch.Groups["PackageName"].Value;
+                string packageVersion = localToolPathMatch.Groups["PackageVersion"].Value;
+                return (isLocalTool: true, null, packageName, packageVersion);
+            }
+
+            // Global tools install to and run from a directory with a ".store" subdirectory which has the actual package content inside of it.
+            // Example (default path): C:\Users\David\.dotnet\tools\.store\basicsampletool\1.0.0\basicsampletool\1.0.0\tools\netcoreapp3.1\any\BasicSampleTool.dll
+            // Example (custom path): C:\Users\David\Code\DotNetCoreToolUpdater\tmp\.store\basicsampletool\1.0.0\basicsampletool\1.0.0\tools\netcoreapp3.1\any\BasicSampleTool.dll
+            var globalToolPathRegex = new Regex(
+                $@"^(?<ToolPath>.+){regexEscapedDirectorySeparator}.store{regexEscapedDirectorySeparator}(?<PackageName>[^{regexEscapedDirectorySeparator}]+){regexEscapedDirectorySeparator}(?<PackageVersion>[^{regexEscapedDirectorySeparator}]+)",
+                regexOptions);
+            Match globalToolPathMatch = globalToolPathRegex.Match(toolAssemblyPath);
+            if (globalToolPathMatch.Success)
+            {
+                string toolPath = globalToolPathMatch.Groups["ToolPath"].Value;
+                string packageName = globalToolPathMatch.Groups["PackageName"].Value;
+                string packageVersion = globalToolPathMatch.Groups["PackageVersion"].Value;
+                return (isLocalTool: false, toolPath, packageName, packageVersion);
+            }
+
+            throw new InvalidOperationException("Could not detect the context for the currently running tool.");
         }
     }
 }

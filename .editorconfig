@@ -226,3 +226,6 @@ dotnet_diagnostic.SA1309.severity = none
 
 # Do not pass literals as localized parameters. We do not need localization
 dotnet_diagnostic.CA1303.severity = none
+
+# Static elements must appear before instance elements. Sometimes it makes more sense to order things differently.
+dotnet_diagnostic.SA1204.severity = none
