@@ -3,6 +3,7 @@
 namespace BasicSampleTool
 {
     using System;
+    using System.IO;
     using System.Reflection;
     using System.Threading;
     using System.Threading.Tasks;
@@ -13,7 +14,7 @@ namespace BasicSampleTool
         private static async Task Main()
         {
             // Start the updater as soon as possible
-            var updater = new Updater("BasicSampleTool", @"C:\Users\David\Code\DotNetCoreToolUpdater\artifacts\samples\basic");
+            var updater = new Updater("BasicSampleTool", FindNugetSource());
 
             // Do not immediately await the update task. Let it update in the background while this tool does what it's supposed to do.
             var updateTask = updater.UpdateAsync(CancellationToken.None);
@@ -36,6 +37,22 @@ namespace BasicSampleTool
 
             var updateResult = await updateTask;
             Console.WriteLine($"UpdateResult.IsSuccessful {updateResult.IsSuccessful}");
+        }
+
+        private static string FindNugetSource()
+        {
+            // In a real tool, this would likely just be nuget.org.
+            // In this sample, we go find the directory where this project places its packages.
+            var dir = Directory.GetCurrentDirectory();
+
+            // Find the git root
+            while (!Directory.Exists(Path.Combine(dir, ".git")))
+            {
+                dir = Path.GetDirectoryName(dir);
+            }
+
+            // From the git root, find the package output path.
+            return Path.Combine(dir, "artifacts", "samples", "basic");
         }
     }
 }
